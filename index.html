@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Todos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.min.js"></script>
-    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/react/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
   </head>
   <body>
@@ -23,7 +23,54 @@
     <ul id='goals'></ul>
   </div>
 
+  <hr />
+
+  <div id="app"></div>
+
   <script src="./index.js"></script>
-  <script type="text/babel" src="./App.js"></script>
+  <script type="text/babel">
+    const List = props => (
+      <ul>
+        <li>LIST</li>
+      </ul>
+    );
+
+    class Todos extends React.Component {
+      render() {
+        return (
+          <div>
+            TODOS
+
+            <List />
+          </div>
+        );
+      }
+    }
+
+    class Goals extends React.Component {
+      render() {
+        return (
+          <div>
+            GOALS
+
+            <List />
+          </div>
+        );
+      }
+    }
+
+    class App extends React.Component {
+      render() {
+        return (
+          <div>
+            <Todos />
+            <Goals />
+          </div>
+        )
+      }
+    }
+
+    ReactDOM.render(<App />, document.getElementById('app'))
+  </script>
   </body>
 </html>
