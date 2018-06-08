@@ -7,6 +7,7 @@
   <script src="https://unpkg.com/react/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
+  <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
 </head>
 <body>
 
@@ -102,8 +103,15 @@
     }
 
     class App extends React.Component {
-      componentDidMount() {
-        this.props.store.subscribe(() => this.forceUpdate());
+      async componentDidMount() {
+        const store = this.props.store;
+        const [todos, goals] = await Promise.all([
+          API.fetchTodos(),
+          API.fetchGoals()
+        ]);
+
+        store.subscribe(() => this.forceUpdate());
+        store.dispatch(receiveDataAction(todos, goals));
       }
 
       render() {
