@@ -44,8 +44,14 @@
         }));
       }
 
-      removeItem = todo => {
+      removeItem = async todo => {
         this.props.store.dispatch(removeTodoAction(todo.id));
+        try {
+          await API.deleteTodo(todo.id);
+        } catch (err) {
+          this.props.store.dispatch(addTodoAction(todo.id));
+          alert("An error occurred. Try again.");
+        }
       }
 
       toggleItem = id => {
@@ -81,8 +87,14 @@
         }));
       }
 
-      removeItem = goal => {
+      removeItem = async goal => {
         this.props.store.dispatch(removeGoalAction(goal.id));
+        try {
+          await API.deleteGoal(goal.id);
+        } catch (err) {
+          this.props.store.dispatch(addGoalAction(goal.id));
+          alert("An error occurred. Try again.");
+        }
       }
 
       render() {
@@ -115,13 +127,18 @@
       }
 
       render() {
-        const { todos, goals } = this.props.store.getState();
+        const { todos, goals, loading } = this.props.store.getState();
+
+        if (loading) {
+          return <h3>Loading...</h3>;
+        }
+
         return (
           <div>
             <Todos store={this.props.store} todos={todos} />
             <Goals store={this.props.store} goals={goals} />
           </div>
-        )
+        );
       }
     }
 

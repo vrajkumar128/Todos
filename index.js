@@ -111,6 +111,15 @@ function goals(state = [], action) {
   }
 }
 
+function loading(state = true, action) {
+  switch(action.type) {
+    case RECEIVE_DATA:
+      return false;
+    default:
+      return state;
+  }
+}
+
 function app(state, action) {
   return {
     todos: todos(state.todos, action),
@@ -153,7 +162,8 @@ const logger = store => next => action => {
 
 const store = Redux.createStore(Redux.combineReducers({
   todos,
-  goals
+  goals,
+  loading
 }), Redux.applyMiddleware(checker, logger));
 
 function generateId() {
