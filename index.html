@@ -32,18 +32,21 @@
     );
 
     class Todos extends React.Component {
-      addItem = e => {
-        e.preventDefault();
-        const name = this.input.value;
-        this.input.value = '';
 
-        this.props.store.dispatch(addTodoAction({
-          name,
-          complete: false,
-          id: generateId()
-        }));
+      // Make sure a todo item gets added to the server before adding it to the local state
+      addItem = async e => {
+        e.preventDefault();
+
+        try {
+          const todo = await API.saveTodo(this.input.value);
+          this.props.store.dispatch(addTodoAction(todo));
+          this.input.value = '';
+        } catch (err) {
+          alert("An error occurred. Try again.");
+        }
       }
 
+      // Optimistically remove a todo item from the local state before making sure that it's removed from the server
       removeItem = async todo => {
         this.props.store.dispatch(removeTodoAction(todo.id));
         try {
@@ -54,8 +57,15 @@
         }
       }
 
-      toggleItem = id => {
+      // Optimistically toggle a todo item in the local state before making sure that it toggled on the server
+      toggleItem = async id => {
         this.props.store.dispatch(toggleTodoAction(id));
+        try {
+          await API.saveTodoToggle(id);
+        } catch (err) {
+          this.props.store.dispatch(toggleTodoAction(id));
+          alert("An error occurred. Try again.");
+        }
       }
 
       render() {
@@ -76,17 +86,21 @@
     }
 
     class Goals extends React.Component {
-      addItem = e => {
-        e.preventDefault();
-        const name = this.input.value;
-        this.input.value = '';
 
-        this.props.store.dispatch(addGoalAction({
-          name,
-          id: generateId()
-        }));
+      // Make sure the goal is added on the server before adding it to the local state
+      addItem = async e => {
+        e.preventDefault();
+
+        try {
+          const goal = await API.saveGoal(this.input.value);
+          this.props.store.dispatch(addGoalAction(goal));
+          this.input.value = '';
+        } catch (err) {
+          alert("An error occurred. Try again.");
+        }
       }
 
+      // Optimistically remove a goal from the local state before making sure that it's removed from the server
       removeItem = async goal => {
         this.props.store.dispatch(removeGoalAction(goal.id));
         try {
