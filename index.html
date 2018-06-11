@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
   <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
+  <script src="https://unpkg.com/redux-thunk/dist/redux-thunk.min.js"></script>
 </head>
 <body>
 
@@ -33,39 +34,25 @@
 
     class Todos extends React.Component {
 
-      // Make sure a todo item gets added to the server before adding it to the local state
-      addItem = async e => {
+      addItem = e => {
         e.preventDefault();
-
-        try {
-          const todo = await API.saveTodo(this.input.value);
-          this.props.store.dispatch(addTodoAction(todo));
-          this.input.value = '';
-        } catch (err) {
-          alert("An error occurred. Try again.");
-        }
+        // Add a todo item to list
+        const name = this.input.value;
+        this.props.store.dispatch(handleAddTodo(
+          name,
+          () => this.input.value = '',
+          () => this.input.value = name
+        ));
       }
 
-      // Optimistically remove a todo item from the local state before making sure that it's removed from the server
-      removeItem = async todo => {
-        this.props.store.dispatch(removeTodoAction(todo.id));
-        try {
-          await API.deleteTodo(todo.id);
-        } catch (err) {
-          this.props.store.dispatch(addTodoAction(todo.id));
-          alert("An error occurred. Try again.");
-        }
+      removeItem = todo => {
+        // Remove a todo item from list
+        this.props.store.dispatch(handleRemoveTodo(todo));
       }
 
-      // Optimistically toggle a todo item in the local state before making sure that it toggled on the server
-      toggleItem = async id => {
-        this.props.store.dispatch(toggleTodoAction(id));
-        try {
-          await API.saveTodoToggle(id);
-        } catch (err) {
-          this.props.store.dispatch(toggleTodoAction(id));
-          alert("An error occurred. Try again.");
-        }
+      toggleItem = id => {
+        // Toggle a todo item's completion status
+        this.props.store.dispatch(handleToggleTodo(id));
       }
 
       render() {
@@ -87,28 +74,20 @@
 
     class Goals extends React.Component {
 
-      // Make sure the goal is added on the server before adding it to the local state
-      addItem = async e => {
+      addItem = e => {
         e.preventDefault();
-
-        try {
-          const goal = await API.saveGoal(this.input.value);
-          this.props.store.dispatch(addGoalAction(goal));
-          this.input.value = '';
-        } catch (err) {
-          alert("An error occurred. Try again.");
-        }
+        // Add a goal to list
+        const name = this.input.value;
+        this.props.store.dispatch(handleAddGoal(
+          name,
+          () => this.input.value = '',
+          () => this.input.value = name
+        ));
       }
 
-      // Optimistically remove a goal from the local state before making sure that it's removed from the server
-      removeItem = async goal => {
-        this.props.store.dispatch(removeGoalAction(goal.id));
-        try {
-          await API.deleteGoal(goal.id);
-        } catch (err) {
-          this.props.store.dispatch(addGoalAction(goal.id));
-          alert("An error occurred. Try again.");
-        }
+      removeItem = goal => {
+        // Remove a goal from list
+        this.props.store.dispatch(handleRemoveGoal(goal));
       }
 
       render() {
@@ -129,25 +108,18 @@
     }
 
     class App extends React.Component {
-      async componentDidMount() {
-        const store = this.props.store;
-        const [todos, goals] = await Promise.all([
-          API.fetchTodos(),
-          API.fetchGoals()
-        ]);
 
-        store.subscribe(() => this.forceUpdate());
-        store.dispatch(receiveDataAction(todos, goals));
+      async componentDidMount() {
+        // Receive initial data from server
+        this.props.store.subscribe(() => this.forceUpdate());
+        this.props.store.dispatch(handleReceiveData());
       }
 
       render() {
         const { todos, goals, loading } = this.props.store.getState();
 
-        if (loading) {
-          return <h3>Loading...</h3>;
-        }
-
-        return (
+        // If data have not yet been received from server, render a loading indicator; else render the UI
+        return loading ? <h3>Loading...</h3> : (
           <div>
             <Todos store={this.props.store} todos={todos} />
             <Goals store={this.props.store} goals={goals} />
@@ -156,7 +128,7 @@
       }
     }
 
-    ReactDOM.render(<App store={store} />, document.getElementById('app'))
+    ReactDOM.render(<App store={store} />, document.getElementById('app'));
   </script>
 </body>
 </html>
