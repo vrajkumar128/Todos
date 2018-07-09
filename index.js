@@ -1,4 +1,5 @@
-// Library code
+/* LIBRARY CODE */
+
 function createStore(reducer) {
   // The store has four parts:
   // 1. The state
@@ -34,10 +35,13 @@ function createStore(reducer) {
 
 }
 
-// App code
+/* APP CODE */
+
+// Map strings to constants (better typo detection)
 const strings = ["ADD_TODO", "REMOVE_TODO", "TOGGLE_TODO", "ADD_GOAL", "REMOVE_GOAL", "RECEIVE_DATA"];
 const [ADD_TODO, REMOVE_TODO, TOGGLE_TODO, ADD_GOAL, REMOVE_GOAL, RECEIVE_DATA] = [...strings];
 
+// Add todo action creator
 function addTodoAction(todo) {
   return {
     type: ADD_TODO,
@@ -45,9 +49,9 @@ function addTodoAction(todo) {
   };
 }
 
-function handleAddTodo(name, optimisticCb, revertCb) {
+// Optimistically add a todo item to the local state before making sure that it's added to the server
+function handleAddTodo(name, optimisticCb, revertOptimisticCb) {
   return async dispatch => {
-    // Optimistically add a todo item to the local state before making sure that it adds to the server
     const optimisticTodo = {
       id: generateId(),
       name,
@@ -55,21 +59,23 @@ function handleAddTodo(name, optimisticCb, revertCb) {
     };
 
     dispatch(addTodoAction(optimisticTodo));
-    optimisticCb();
+    optimisticCb(); // Clear input field's value
 
     try {
       const todo = await API.saveTodo(name);
+      // If API request succeeds, replace optimisticTodo with todo
       dispatch(removeTodoAction(optimisticTodo.id));
       dispatch(addTodoAction(todo));
     } catch (err) {
       console.log("Error:", err);
       alert("An error occurred. Try again.");
       dispatch(removeTodoAction(optimisticTodo.id));
-      revertCb();
+      revertOptimisticCb(); // Restore input field's value
     }
   };
 }
 
+// Remove todo action creator
 function removeTodoAction(id) {
   return {
     type: REMOVE_TODO,
@@ -77,9 +83,9 @@ function removeTodoAction(id) {
   };
 }
 
+// Optimistically remove a todo item from the local state before making sure that it's removed from the server
 function handleRemoveTodo(todo) {
   return async dispatch => {
-    // Optimistically remove a todo item from the local state before making sure that it's removed from the server
     dispatch(removeTodoAction(todo.id));
 
     try {
@@ -92,6 +98,7 @@ function handleRemoveTodo(todo) {
   };
 }
 
+// Toggle todo action creator
 function toggleTodoAction(id) {
   return {
     type: TOGGLE_TODO,
@@ -99,9 +106,9 @@ function toggleTodoAction(id) {
   };
 }
 
+// Optimistically toggle a todo item in the local state before making sure that it toggles on the server
 function handleToggleTodo(id) {
   return async dispatch => {
-    // Optimistically toggle a todo item in the local state before making sure that it toggles on the server
     dispatch(toggleTodoAction(id));
 
     try {
@@ -114,6 +121,7 @@ function handleToggleTodo(id) {
   };
 }
 
+// Add goal action creator
 function addGoalAction(goal) {
   return {
     type: ADD_GOAL,
@@ -121,30 +129,32 @@ function addGoalAction(goal) {
   };
 }
 
-function handleAddGoal(name, optimisticCb, revertCb) {
+// Optimistically add a goal to the local state before making sure that it's added to the server
+function handleAddGoal(name, optimisticCb, revertOptimisticCb) {
   return async dispatch => {
-    // Optimistically add a goal to the local state before making sure that it adds to the server
     const optimisticGoal = {
       id: generateId(),
       name,
     };
 
     dispatch(addGoalAction(optimisticGoal));
-    optimisticCb();
+    optimisticCb(); // Clear input field's value
 
     try {
       const goal = await API.saveGoal(name);
+      // If API request succeeds, replace optimisticGoal with goal
       dispatch(removeGoalAction(optimisticGoal.id));
       dispatch(addGoalAction(goal));
     } catch (err) {
       console.log("Error:", err);
       alert("An error occurred. Try again.");
       dispatch(removeGoalAction(optimisticGoal.id));
-      revertCb();
+      revertOptimisticCb(); // Restore input field's value
     }
   };
 }
 
+// Remove goal action creator
 function removeGoalAction(id) {
   return {
     type: REMOVE_GOAL,
@@ -152,9 +162,9 @@ function removeGoalAction(id) {
   };
 }
 
+// Optimistically remove a goal from the local state before making sure that it's removed from the server
 function handleRemoveGoal(goal) {
   return async dispatch => {
-    // Optimistically remove a goal from the local state before making sure that it's removed from the server
     dispatch(removeGoalAction(goal.id));
 
     try {
@@ -167,6 +177,7 @@ function handleRemoveGoal(goal) {
   };
 }
 
+// Receive data action creator
 function receiveDataAction(todos, goals) {
   return {
     type: RECEIVE_DATA,
@@ -175,9 +186,9 @@ function receiveDataAction(todos, goals) {
   };
 }
 
+// Retrieve data from server and add them to UI
 function handleReceiveData() {
   return async dispatch => {
-    // Retrieve data from server and add them to UI
     const [todos, goals] = await Promise.all([
       API.fetchTodos(),
       API.fetchGoals()
@@ -187,6 +198,7 @@ function handleReceiveData() {
   };
 }
 
+// Todos reducer
 function todos(state = [], action) {
   switch (action.type) {
     case ADD_TODO:
@@ -203,6 +215,7 @@ function todos(state = [], action) {
   }
 }
 
+// Goals reducer
 function goals(state = [], action) {
   switch (action.type) {
     case ADD_GOAL:
@@ -216,6 +229,7 @@ function goals(state = [], action) {
   }
 }
 
+// Loading flag
 function loading(state = true, action) {
   switch (action.type) {
     case RECEIVE_DATA:
@@ -225,6 +239,7 @@ function loading(state = true, action) {
   }
 }
 
+// Root reducer
 function app(state, action) {
   return {
     todos: todos(state.todos, action),
@@ -232,50 +247,40 @@ function app(state, action) {
   };
 }
 
+// If an action creator returns a function, invoke it; else move to next middleware
 const thunk = store => next => action => {
-  // If an action creator returns a function, call it; else move to next middleware
   return typeof action === 'function' ? action(store.dispatch) : next(action);
 }
 
+// Check if a proposed goal or todo contains 'bitcoin'; if so, reject it
 const checker = store => next => action => {
-  if (action.type == ADD_TODO && action.todo.name.toLowerCase().includes('bitcoin')) {
+  if (action.type === ADD_TODO && action.todo.name.toLowerCase().includes('bitcoin')) {
     return alert("No. That's a bad idea!");
-  } else if (action.type == ADD_GOAL && action.goal.name.toLowerCase().includes('bitcoin')) {
+  } else if (action.type === ADD_GOAL && action.goal.name.toLowerCase().includes('bitcoin')) {
     return alert("No. That's a bad idea!");
   } else {
     return next(action);
   }
 }
 
-// function checker(store) {
-//   return function(next) {
-//     return function(action) {
-//       if (action.type == ADD_TODO && action.todo.name.toLowerCase().includes('bitcoin')) {
-//         return alert("No. That's a bad idea!");
-//       } else if (action.type == ADD_GOAL && action.goal.name.toLowerCase().includes('bitcoin')) {
-//         return alert("No. That's a bad idea!");
-//       } else {
-//         return next(action);
-//       }
-//     }
-//   }
-// }
-
+// Logging middleware
 const logger = store => next => action => {
   console.group(action.type);
-    console.log("The action: ", action);
+    console.log("The action:", action);
     const result = next(action);
-    console.log("The new state: ", store.getState());
+    console.log("The new state:", store.getState());
   console.groupEnd();
   return result;
 }
 
+// Create the Redux store
 const store = Redux.createStore(Redux.combineReducers({
   todos,
   goals,
   loading
 }), Redux.applyMiddleware(ReduxThunk.default, checker, logger));
 
+// Generate a random id
 function generateId() {
   return Math.random().toString(36).substring(2) + (new Date()).getTime().toString(36);
 }

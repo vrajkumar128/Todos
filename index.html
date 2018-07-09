@@ -33,26 +33,25 @@
     );
 
     class Todos extends React.Component {
-
+      // Add a todo item to list
       addItem = e => {
         e.preventDefault();
-        // Add a todo item to list
         const name = this.input.value;
-        this.props.store.dispatch(handleAddTodo(
+        this.props.dispatch(handleAddTodo(
           name,
           () => this.input.value = '',
           () => this.input.value = name
         ));
       }
 
+      // Remove a todo item from list
       removeItem = todo => {
-        // Remove a todo item from list
-        this.props.store.dispatch(handleRemoveTodo(todo));
+        this.props.dispatch(handleRemoveTodo(todo));
       }
 
+      // Toggle a todo item's completion status
       toggleItem = id => {
-        // Toggle a todo item's completion status
-        this.props.store.dispatch(handleToggleTodo(id));
+        this.props.dispatch(handleToggleTodo(id));
       }
 
       render() {
@@ -72,22 +71,25 @@
       }
     }
 
-    class Goals extends React.Component {
+    const connectedTodos = connect(store => ({
+      todos: store.todos
+    }))(Todos);
 
+    class Goals extends React.Component {
+      // Add a goal to list
       addItem = e => {
         e.preventDefault();
-        // Add a goal to list
         const name = this.input.value;
-        this.props.store.dispatch(handleAddGoal(
+        this.props.dispatch(handleAddGoal(
           name,
           () => this.input.value = '',
           () => this.input.value = name
         ));
       }
 
+      // Remove a goal from list
       removeItem = goal => {
-        // Remove a goal from list
-        this.props.store.dispatch(handleRemoveGoal(goal));
+        this.props.dispatch(handleRemoveGoal(goal));
       }
 
       render() {
@@ -107,28 +109,72 @@
       }
     }
 
-    class App extends React.Component {
+    class ConnectedGoals extends React.Component {
+      render() {
+        return (
+          <Context.Consumer>
+            {store => {
+              const { goals } = store.getState();
+              return <Goals dispatch={store.dispatch} goals={goals} />;
+            }}
+          </Context.Consumer>
+        );
+      }
+    }
 
-      async componentDidMount() {
-        // Receive initial data from server
-        this.props.store.subscribe(() => this.forceUpdate());
-        this.props.store.dispatch(handleReceiveData());
+    // Create connected container component for Goals
+    const connectedGoals = connect(state => ({
+      goals: state.goals
+    }))(Goals);
+
+    class App extends React.Component {
+      // Receive initial data from server
+      componentDidMount = async () => {
+        this.props.subscribe(() => this.forceUpdate());
+        this.props.dispatch(handleReceiveData());
       }
 
+      // If data have not yet been received from server, render a loading indicator; else render the UI
       render() {
-        const { todos, goals, loading } = this.props.store.getState();
-
-        // If data have not yet been received from server, render a loading indicator; else render the UI
-        return loading ? <h3>Loading...</h3> : (
+        return this.props.loading ? <h3>Loading...</h3> : (
           <div>
-            <Todos store={this.props.store} todos={todos} />
-            <Goals store={this.props.store} goals={goals} />
+            <ConnectedTodos />
+            <ConnectedGoals />
           </div>
         );
       }
     }
 
-    ReactDOM.render(<App store={store} />, document.getElementById('app'));
+    // Create connected container component for App
+    const connectedApp = connect(state => ({
+      loading: state.loading
+    }))(App);
+
+    // Create context to avoid excessive prop plumbing
+    const Context = React.createContext();
+
+    const connect = mapStateToProps => (
+      Component => {}
+    );
+
+    // Abstraction for Context.Provider
+    class Provider extends React.Component {
+      render() {
+        return (
+          <Context.Provider value={this.props.store}>
+            {this.props.children}
+          </Context.Provider>
+        );
+      }
+    }
+
+    // Render UI in DOM's #app element
+    ReactDOM.render(
+      <Provider store={store}>
+        <ConnectedApp />
+      </Provider>,
+      document.getElementById('app'));
   </script>
+
 </body>
 </html>
