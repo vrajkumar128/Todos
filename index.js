@@ -7,22 +7,22 @@ function createStore(reducer) {
   // 3. A way to listen for changes to the state
   // 4. A way to update the state
 
-  const state = {};
+  let state = {};
   const listeners = [];
 
   // Return the state
   const getState = () => state;
 
+  // Listen for changes to the state
   const subscribe = listener => {
-    // Listen for changes to the state
     listeners.push(listener);
     return () => {
       listeners = listeners.filter(l => l !== listener);
     }
   }
 
+  // Update the state
   const dispatch = action => {
-    // Update the state
     state = reducer(state, action);
     listeners.forEach(listener => listener());
   }
@@ -69,7 +69,7 @@ function handleAddTodo(name, optimisticCb, revertOptimisticCb) {
     } catch (err) {
       console.log("Error:", err);
       alert("An error occurred. Try again.");
-      dispatch(removeTodoAction(optimisticTodo.id));
+      dispatch(removeTodoAction(optimisticTodo.id)); // Revert optimistic update
       revertOptimisticCb(); // Restore input field's value
     }
   };
@@ -116,7 +116,7 @@ function handleToggleTodo(id) {
     } catch (err) {
       console.log("Error:", err);
       alert("An error occurred. Try again.");
-      dispatch(toggleTodoAction(id));
+      dispatch(toggleTodoAction(id)); // Revert optimistic update
     }
   };
 }

@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
   <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
   <script src="https://unpkg.com/redux-thunk/dist/redux-thunk.min.js"></script>
+  <script src="https://unpkg.com/react-redux@5.0.6/dist/react-redux.min.js"></script>
 </head>
 <body>
 
@@ -31,6 +32,40 @@
         )}
       </ul>
     );
+
+    // Create connect function to connect components to Context
+    const connect = mapStateToProps => Component => {
+      class Receiver extends React.Component {
+        componentDidMount = () => {
+          const { subscribe } = this.props.store;
+          this.unsubscribe = subscribe(() => this.forceUpdate());
+        }
+
+        componentWillUnmount = () => {
+          this.unsubscribe();
+        }
+
+        render() {
+          const { getState, dispatch } = this.props.store;
+          const state = getState();
+          const stateNeeded = mapStateToProps(state);
+
+          return <Component dispatch={dispatch} {...stateNeeded} />;
+        }
+      }
+
+      class ConnectedComponent extends React.Component {
+        render() {
+          return (
+            <Context.Consumer>
+              {store => <Receiver store={store} />}
+            </Context.Consumer>
+          );
+        }
+      }
+
+      return ConnectedComponent;
+    }
 
     class Todos extends React.Component {
       // Add a todo item to list
@@ -71,8 +106,8 @@
       }
     }
 
-    const connectedTodos = connect(store => ({
-      todos: store.todos
+    const ConnectedTodos = ReactRedux.connect(state => ({
+      todos: state.todos
     }))(Todos);
 
     class Goals extends React.Component {
@@ -109,28 +144,14 @@
       }
     }
 
-    class ConnectedGoals extends React.Component {
-      render() {
-        return (
-          <Context.Consumer>
-            {store => {
-              const { goals } = store.getState();
-              return <Goals dispatch={store.dispatch} goals={goals} />;
-            }}
-          </Context.Consumer>
-        );
-      }
-    }
-
     // Create connected container component for Goals
-    const connectedGoals = connect(state => ({
+    const ConnectedGoals = ReactRedux.connect(state => ({
       goals: state.goals
     }))(Goals);
 
     class App extends React.Component {
       // Receive initial data from server
-      componentDidMount = async () => {
-        this.props.subscribe(() => this.forceUpdate());
+      componentDidMount = () => {
         this.props.dispatch(handleReceiveData());
       }
 
@@ -146,16 +167,12 @@
     }
 
     // Create connected container component for App
-    const connectedApp = connect(state => ({
+    const ConnectedApp = ReactRedux.connect(state => ({
       loading: state.loading
     }))(App);
 
     // Create context to avoid excessive prop plumbing
     const Context = React.createContext();
-
-    const connect = mapStateToProps => (
-      Component => {}
-    );
 
     // Abstraction for Context.Provider
     class Provider extends React.Component {
@@ -170,9 +187,9 @@
 
     // Render UI in DOM's #app element
     ReactDOM.render(
-      <Provider store={store}>
+      <ReactRedux.Provider store={store}>
         <ConnectedApp />
-      </Provider>,
+      </ReactRedux.Provider>,
       document.getElementById('app'));
   </script>
 
